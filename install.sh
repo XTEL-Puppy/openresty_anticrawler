@@ -8,7 +8,7 @@ OPENRESTY_PREFIX=$(openresty -V 2>&1 | grep 'configure arguments' | sed -n 's/.*
 
 # 检查是否获取到路径
 if [[ -z "$OPENRESTY_PREFIX" ]]; then
-    echo "未能自动检测 OpenResty 的安装路径，请手动输入路径（例如 /usr/local/openresty）："
+    echo "Failed to automatically detect the installation path of OpenResty. Please enter the path manually (for example, /usr/local/openresty):"
     read -r OPENRESTY_PREFIX
 fi
 
@@ -24,3 +24,4 @@ sudo cp nginx.conf "$OPENRESTY_PREFIX/nginx/conf/nginx.conf"
 sudo systemctl restart openresty
 
 echo "The anti-crawler system has been installed successfully!"
+
