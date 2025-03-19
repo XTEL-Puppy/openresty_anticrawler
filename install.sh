@@ -12,13 +12,17 @@ if [[ -z "$OPENRESTY_PREFIX" ]]; then
     read -r OPENRESTY_PREFIX
 fi
 
+# 安装 LuaFileSystem
+echo "Installing LuaFileSystem..."
+sudo opm get spacewander/luafilesystem
+
 # 复制 Lua 和 JSON 规则文件
-sudo cp -r lua "$OPENRESTY_PREFIX/nginx/"
-sudo cp -r json "$OPENRESTY_PREFIX/nginx/"
+sudo cp -r lua "$OPENRESTY_PREFIX/"
+sudo cp -r json "$OPENRESTY_PREFIX/"
 
 # 备份原来的 nginx.conf 并覆盖
-sudo cp "$OPENRESTY_PREFIX/nginx/conf/nginx.conf" "$OPENRESTY_PREFIX/nginx/conf/nginx.conf.bak"
-sudo cp nginx.conf "$OPENRESTY_PREFIX/nginx/conf/nginx.conf"
+sudo cp "$OPENRESTY_PREFIX/conf/nginx.conf" "$OPENRESTY_PREFIX/conf/nginx.conf.bak"
+sudo cp nginx.conf "$OPENRESTY_PREFIX/conf/nginx.conf"
 
 # 重启 OpenResty
 sudo systemctl restart openresty
