@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "current_version": 2
+  },
+  
+  "rules": [
+    {
+      "name": "js_challenge",
+      "id": 1,
+      "enable": false,
+      "cookie_expire": 1800,
+      "action": "js_challenge"
+    },
+    {
+      "name": "js_ipua_count",
+      "id": 2,
+      "enable": false,
+      "threshold": {
+        "requests": 90,
+        "interval": 60
+      },
+      "action": "captcha"
+    },
+    {
+      "name": "cokkie_count",
+      "id": 3,
+      "enable": false,
+      "threshold": {
+        "requests": 450,
+        "interval": 180
+      },
+      "action": "captcha"
+    }
+
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "rule_version": 1,
+    "captcha": {
+      "valid_fonts": ["TlwgTypo-Bold", "Rachana-Regular", "URWBookman-LightItalic"]
+    }
+  },
+  "preprocess": [
+    {
+      "name": "ip_rete_limit",
+      "id": 1,
+      "enable": false,
+      "rate": 30
+    },
+    {
+      "name": "ua_blacklist",
+      "id": 2,
+      "enable": true,
+      "match": {
+        "field": "ua",
+        "operator": "regex",
+        "value": ["scrapy", "python"]
+      },
+      "action": "refuse"
+    },
+    {
+      "name": "user_whitelist",
+      "id": 3,
+      "enable": true,
+      "interval": 600,
+      "action": "allow"
+    },
+    {
+      "name": "ua_whitelist",
+      "id": 4,
+      "enable": false,
+      "dns_servers": ["8.8.8.8", "8.8.8.4"],
+      "match": {
+        "field": "ua",
+        "operator": "regex",
+        "value": ["Googlebot", "bingbot", "Baiduspider"],
+        "dns": {
+          "Googlebot": ["google.com", "googlebot.com", "googleusercontent.com"],
+          "bingbot": ["search.msn.com"],
+          "Baiduspider": ["baidu.com", "baidu.jp"]
+        }
+      },
+      "action": "allow"
+    },
+    {
+      "name": "user_blacklist",
+      "id": 5,
+      "enable": true,
+      "interval": 300,
+      "action": "refuse"
+    }
+  ]
+}

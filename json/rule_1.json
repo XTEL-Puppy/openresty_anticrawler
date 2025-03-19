@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "current_version": 1
+  },
+
+  "rules": [
+    {
+      "name": "IPUA_count",
+      "id": 1,
+      "enable": true,
+      "threshold": {
+        "requests": 10,
+        "interval": 10
+      },
+      "action": "captcha"
+    }
+  ]
+}
