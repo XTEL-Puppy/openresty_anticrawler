@@ -9,10 +9,10 @@
       "id": 1,
       "enable": true,
       "threshold": {
-        "requests": 10,
-        "interval": 10
+        "requests": 150,
+        "interval": 60
       },
-      "action": "captcha"
+      "action": "refuse"
     }
   ]
 }
