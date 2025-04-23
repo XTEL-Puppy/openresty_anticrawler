@@ -7,29 +7,29 @@
     {
       "name": "js_challenge",
       "id": 1,
-      "enable": false,
+      "enable": true,
       "cookie_expire": 1800,
       "action": "js_challenge"
     },
     {
       "name": "js_ipua_count",
       "id": 2,
-      "enable": false,
+      "enable": true,
       "threshold": {
         "requests": 90,
         "interval": 60
       },
-      "action": "captcha"
+      "action": "refuse"
     },
     {
       "name": "cokkie_count",
       "id": 3,
-      "enable": false,
+      "enable": true,
       "threshold": {
         "requests": 450,
         "interval": 180
       },
-      "action": "captcha"
+      "action": "refuse"
     }
 
   ]
