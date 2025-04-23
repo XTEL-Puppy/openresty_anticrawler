@@ -10,7 +10,7 @@
       "name": "ip_rete_limit",
       "id": 1,
       "enable": false,
-      "rate": 30
+      "rate": 110
     },
     {
       "name": "ua_blacklist",
@@ -26,8 +26,8 @@
     {
       "name": "user_whitelist",
       "id": 3,
-      "enable": true,
-      "interval": 600,
+      "enable": false,
+      "interval": 1800,
       "action": "allow"
     },
     {
@@ -50,8 +50,8 @@
     {
       "name": "user_blacklist",
       "id": 5,
-      "enable": true,
-      "interval": 300,
+      "enable": false,
+      "interval": 600,
       "action": "refuse"
     }
   ]
