@@ -69,23 +69,30 @@ end
 
 -- 加载规则
 function _M.load_rules()
-    -- **检查 preprocess.json 是否修改**
-    if not is_file_modified("preprocess.json") then
+    local preprocess_data = ""
+
+    -- 先从缓存中读取 preprocess_rules
+    -- 如果不是首次加载那么cache里会有json数据 如果是首次加载那么 is_file_modified 为 true 依旧能为 preprocess_data 赋值
+    local cached_preprocess_data = cache:get("preprocess_rules")
+    if cached_preprocess_data then
+        preprocess_data = cjson.decode(cached_preprocess_data)
+    end
+
+    -- 检查 preprocess.json 是否修改
+    if is_file_modified("preprocess.json") then
         -- ngx.log(ngx.INFO, "preprocess.json not modified, skipping reload")
-        return true
+        -- 加载 preprocess.json 返回的是 lua 表数据
+        preprocess_data = load_json("preprocess.json")
+        if not preprocess_data then
+            ngx.log(ngx.ERR, "Failed to load preprocess.json")
+            return false
+        end
+
+        ngx.log(ngx.INFO, "preprocess.json is modified")
+
+        -- 缓存 preprocess.json 规则集
+        cache:set("preprocess_rules", cjson.encode(preprocess_data))
     end
-
-    -- 加载 preprocess.json
-    local preprocess_data = load_json("preprocess.json")
-    if not preprocess_data then
-        ngx.log(ngx.ERR, "Failed to load preprocess.json")
-        return false
-    end
-
-    ngx.log(ngx.INFO, "preprocess.json is modified")
-
-    -- 缓存 preprocess.json 规则集
-    cache:set("preprocess_rules", cjson.encode(preprocess_data))
 
     -- 选择 rule1.json 或 rule2.json
     local rule_version = preprocess_data.meta.rule_version or 1     -- 获取当前版本号
@@ -157,4 +164,3 @@ end
 
 
 return _M
-

@@ -141,10 +141,13 @@ function _M.process(redis, fingerprint)
     <html>
     <head>
         <meta charset="utf-8">
+    </head>
+    <body>
+        <h1>Checking your browser...</h1>
         <script>
             // 反 Selenium 爬虫检测
             if (window.navigator.webdriver) {
-                location.href = "/403.html";  // 跳转到 403 页面
+                document.body.innerHTML = "<h1>403 Forbidden</h1><p>You don't have permission to access / on this server.</p>";
                 throw new Error();  // 停止 JS 执行
             }
 
@@ -166,9 +169,6 @@ function _M.process(redis, fingerprint)
                 location.reload();
             }, 500);   // 0.5s 后刷新页面
         </script>
-    </head>
-    <body>
-        <h1>Checking your browser...</h1>
     </body>
     </html>
     ]])

@@ -14,4 +14,3 @@ if redis_conn then
     end
     ctx.redis_conn = nil  -- 清理 ngx.ctx
 end
-

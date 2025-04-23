@@ -42,13 +42,13 @@ local client_ip = get_client_ip()
 local user_agent = get_user_agent()
 
 -- 如果任意一方为空，则返回 403
--- if not client_ip or client_ip == "" or not user_agent or user_agent == "" then
-    -- return ngx.exit(403)
--- end
+if not client_ip or client_ip == "" or not user_agent or user_agent == "" then
+    return ngx.exit(403)
+end
 
 -- 计算哈希值
 local function generate_fingerprint(ip, ua)
-    local raw_str = ip  -- 用 | 分隔避免歧义
+    local raw_str = ip .. "|" .. ua  -- 用 | 分隔避免歧义
     return xxh32(raw_str)
 end
 
@@ -59,7 +59,21 @@ ngx.ctx.ua = user_agent
 local fingerprint = generate_fingerprint(client_ip, user_agent)
 ngx.ctx.fingerprint = fingerprint
 
+-- 如果此时存在cookie 则将cookie的signature部分作为fingerprint传递到 preprocess 模块
+local cookie_str = ngx.var.cookie_MyCookie
 
+
+if cookie_str then
+    local parts = {}
+    for part in cookie_str:gmatch("[^:]+") do
+        table.insert(parts, part)
+    end
+    fingerprint = parts[2]  -- 取第二部分
+else
+    fingerprint = ngx.ctx.fingerprint  -- 提取失败时 重新填入 IP+UA 的 XXH32 值
+end
+
+-- ngx.log(ngx.INFO, "THE ctx.fingerprint is: ", ngx.ctx.fingerprint, " THE fingerprint is: ", fingerprint)
 
 -- 读取规则版本
 local version = config_module.get_rules("preprocess").meta.rule_version
@@ -72,7 +86,6 @@ if preprocess.rules_process(red, fingerprint) then
     return
 end
 rule.rules_process(red, fingerprint)
-
 
 
 

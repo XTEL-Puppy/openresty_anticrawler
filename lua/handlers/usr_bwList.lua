@@ -94,7 +94,7 @@ function _M.is_in_Wlist(redis, fingerprint)
     -- 检查白名单
     local wscore = redis:zscore("usr_Wlist", fingerprint)
     if wscore ~= ngx.null and tonumber(wscore) > now then
-        ngx.log(ngx.INFO, "User is in whitelist")
+        ngx.log(ngx.INFO, "User is in whitelist, fingerprint is: ", fingerprint)
         return true
     end
 
@@ -115,7 +115,7 @@ function _M.is_in_Blist(redis, fingerprint)
     -- 检查黑名单
     local bscore = redis:zscore("usr_Blist", fingerprint)
     if bscore ~= ngx.null and tonumber(bscore) > now then
-        ngx.log(ngx.INFO, "User is in blacklist")
+        ngx.log(ngx.INFO, "User is in blacklist, fingerprint is: ", fingerprint)
         return true
     end
 

@@ -64,4 +64,3 @@ function _M.is_ua_whitelisted()
 end
 
 return _M
-

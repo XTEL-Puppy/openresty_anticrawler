@@ -73,7 +73,7 @@ local function request_count_exceed(handler, redis, fingerprint)
         ngx.log(ngx.INFO, "A new user is added into user BlackList.IP: ", ngx.ctx.ip, " and fingerprint: ", fingerprint, " and interval: ", config_preprocess.interval)
         return true
     elseif result == 0 then
-        ngx.log(ngx.INFO, "IP: ", ngx.ctx.ip, " is count......")
+        ngx.log(ngx.INFO, "IP: ", ngx.ctx.ip, " is count......Fingerprint is: ", fingerprint)
         return false
     elseif result == 2 then
         return true
@@ -89,11 +89,11 @@ function _M.process(redis, fingerprint, count_type)
 
     if count_type == "ipua" then
         handler = get_handler()
-        ngx.log(ngx.INFO, "ipua counting!")
+        ngx.log(ngx.INFO, "Request count, count type is ipua")
 
     elseif count_type == "cookie" then
         handler = config.rules[3]
-        ngx.log(ngx.INFO, "cookie counting!")
+        ngx.log(ngx.INFO, "Request count, count type is cookie")
 
     else
         return ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
