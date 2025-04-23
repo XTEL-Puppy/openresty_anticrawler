@@ -9,7 +9,7 @@
     {
       "name": "ip_rete_limit",
       "id": 1,
-      "enable": false,
+      "enable": true,
       "rate": 110
     },
     {
@@ -26,14 +26,14 @@
     {
       "name": "user_whitelist",
       "id": 3,
-      "enable": false,
+      "enable": true,
       "interval": 1800,
       "action": "allow"
     },
     {
       "name": "ua_whitelist",
       "id": 4,
-      "enable": false,
+      "enable": true,
       "dns_servers": ["8.8.8.8", "8.8.8.4"],
       "match": {
         "field": "ua",
@@ -50,7 +50,7 @@
     {
       "name": "user_blacklist",
       "id": 5,
-      "enable": false,
+      "enable": true,
       "interval": 600,
       "action": "refuse"
     }
