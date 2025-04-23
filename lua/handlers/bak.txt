@@ -1,0 +1,143 @@
+local function request_count_exceed(handler, redis, fingerprint)
+
+    local count = redis:get(fingerprint)
+
+    local threshold_value = handler.threshold.requests
+    local expire_time = handler.threshold.interval
+
+    -- ngx.log(ngx.INFO, "IP: ", ngx.ctx.ip, ", Count: ", count)
+
+    if count ~= ngx.null then
+        -- 大于单位时间的限制次数则将用户返回黑名单 并返回true
+        if tonumber(count) >= threshold_value then
+            ngx.log(ngx.WARN, "Rate limit exceeded for IP: ", ngx.ctx.ip)
+            usr_bwlist.add_to_Blist(redis, ngx.ctx.ip, fingerprint)
+            redis:del(fingerprint)
+            return true
+
+        else
+            -- 次数仍在正常范围则只 +1 记录次数
+            local new_count = redis:incr(fingerprint)
+            ngx.log(ngx.INFO, "IP: ", ngx.ctx.ip, ", Count: ", new_count)
+            return false
+        end
+        
+    else
+        -- 首次访问次数记为1
+        redis:setex(fingerprint, expire_time, 1)
+        ngx.log(ngx.INFO, "New IP logged: ", ngx.ctx.ip, ", Key: ", fingerprint, ", Count: 1")
+        return false
+    end
+end
+
+
+
+
+
+
+local function request_count_exceed(handler, redis, fingerprint)
+
+    local threshold_value = handler.threshold.requests
+    local expire_time = handler.threshold.interval
+
+    -- Redis Lua 脚本，保证 INCR 和 EXPIRE 是原子操作
+    local script = [[
+        local key = KEYS[1]
+        local count = redis.call("INCR", key)
+        if count == 1 then
+            redis.call("EXPIRE", key, ARGV[1])  -- 只在第一次访问时设置 TTL
+        end
+        if count >= tonumber(ARGV[2]) then
+            -- redis.call("DEL", key)  -- 超过阈值删除计数（防止溢出）
+            return count  -- 这里返回 count 供 Lua 代码判断
+        end
+        return count
+    ]]
+
+    -- 执行 Redis Lua 脚本，确保 `INCR` 和 `EXPIRE` 一起执行
+    local count, err = redis:eval(script, 1, fingerprint, expire_time, threshold_value)
+    if count == ngx.null then
+        ngx.log(ngx.ERR, "Failed to update count in Redis: ", err)
+        return false
+    end
+
+    ngx.log(ngx.INFO, "IP: ", ngx.ctx.ip, ", Count: ", count)
+
+    -- 如果超过阈值，加入黑名单
+    if count >= threshold_value then
+        ngx.log(ngx.WARN, "Rate limit exceeded for IP: ", ngx.ctx.ip)
+        usr_bwlist.add_to_Blist(redis, ngx.ctx.ip, fingerprint)
+        return true  -- 被封禁
+    end
+
+    return false  -- 仍然在正常范围
+end
+
+
+
+
+
+
+
+
+local function request_count_exceed(handler, redis, fingerprint)
+
+    local script = [[
+        local key = KEYS[1]
+        local threshold_value = tonumber(ARGV[2])
+        local expire_time_count = ARGV[1]
+        local blist_key = KEYS[2]
+        local fingerprint = ARGV[3]
+        local expire_time_blist = ARGV[4]
+
+        -- 增加计数并设置过期时间
+        local count = redis.call("INCR", key)
+        if count == 1 then
+            redis.call("EXPIRE", key, expire_time_count)
+        end
+
+        -- 判断是否超过阈值
+        if count >= threshold_value then
+            -- 检查是否已在黑名单，若不在则添加
+            local exists = redis.call("ZSCORE", blist_key, fingerprint)
+            if not exists then
+                redis.call("ZADD", blist_key, expire_time_blist, fingerprint)
+                redis.call("DEL", key)  -- 超过阈值删除计数（防止溢出）
+            end
+            return 1, count  -- 表示触发黑名单
+        end
+        return 0, count  -- 未触发
+    ]]
+
+    local threshold_value = handler.threshold.requests
+    local expire_time_count = handler.threshold.interval
+    local expire_time_blist = config_preprocess.interval
+
+
+    -- ngx.log(ngx.INFO, "IP: ", ngx.ctx.ip, ", Count: ", count)
+
+    expire_time_blist = expire_time_blist + ngx.time()
+
+    -- 执行脚本时传递额外参数
+    local result, count = redis:eval(
+        script, 
+        2,  -- KEYS数量
+        fingerprint,  -- KEYS[1]: 计数键
+        "usr_Blist",  -- KEYS[2]: 黑名单键
+        expire_time_count,  -- ARGV[1]: 计数过期时间
+        threshold_value,  -- ARGV[2]: 阈值
+        fingerprint,  -- ARGV[3]: 用户指纹
+        expire_time_blist  -- ARGV[4]: 黑名单过期时间
+    )
+
+    if result == 1 then
+        ngx.log(ngx.INFO, "A new user is added into user BlackList.IP: ", ngx.ctx.ip, " and fingerprint: ", fingerprint, " and interval: ", config_preprocess.interval)
+        return true
+    elseif result == 0 then
+        ngx.log(ngx.INFO, "IP: ", ngx.ctx.ip, ", Count: ", count)
+        return false
+    else
+        ngx.log(ngx.ERR, "Redis error: ", err)
+        return false
+    end
+end

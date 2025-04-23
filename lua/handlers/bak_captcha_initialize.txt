@@ -1,0 +1,92 @@
+local shared_cache = ngx.shared.captcha_cache
+local captcha_generate = require "handlers.captcha_generate"
+
+local _M = {}
+
+-- 验证码池初始化容量
+local CAPTCHA_POOL_SIZE = 500
+-- 验证码池补充量
+local REFILL_COUNT = 10
+-- 最低水位
+local LOW_WATERMARK = 450
+-- 最高水位
+local HIGH_WATERMARK = 550 
+
+-- 初始化验证码池
+function _M.init_captcha_pool()
+
+    -- 只在 worker 0 上执行，防止多个 worker 进程重复执行
+    if ngx.worker.id() ~= 0 then
+        return
+    end
+
+    if shared_cache:get("initialized") then
+        return -- 避免重复初始化
+    end
+
+    local ttl = math.random(480, 720)  -- 8~12 分钟
+
+    for i = 1, CAPTCHA_POOL_SIZE do
+        local code, img = captcha_generate.generate()
+        shared_cache:set(code, img, ttl) -- 设置 8-12min 随机 TTL
+    end
+
+    shared_cache:set("initialized", true)
+    ngx.log(ngx.INFO, "The captcha is initialized. The current number is ", CAPTCHA_POOL_SIZE)
+
+end
+
+function _M.start_create_timer()
+
+    -- 只在 worker 0 上执行，防止多个 worker 进程重复执行
+    if ngx.worker.id() ~= 0 then
+        return
+    end
+
+    -- 定时维护 300s = 5min
+    local ok, err = ngx.timer.every(300, function()
+
+        -- 获取当前验证码池的所有 keys
+        local keys = shared_cache:get_keys(0)
+        local current_size = #keys
+        local ttl = math.random(480, 720)  -- 8~12 分钟
+
+        -- 减小验证码池规模的波动
+        -- 如果超过上限，清理至 LOW_WATERMARK
+        if current_size > HIGH_WATERMARK then
+            for i = 1, (current_size - LOW_WATERMARK) do
+                shared_cache:delete(keys[i]) -- 尽可能删除最旧的
+            end
+            ngx.log(ngx.INFO, "Exceed HIGH_WATERMARK. Cleared excess captchas. Current count: " .. #shared_cache:get_keys(0))
+        end
+
+        -- 如果低于下限，补充至 HIGH_WATERMARK
+        if current_size < LOW_WATERMARK then
+            for i = 1, (HIGH_WATERMARK - current_size) do
+                local code, img = captcha_generate.generate()
+                shared_cache:set(code, img, ttl) -- 设置 8-12min 随机 TTL
+            end
+            ngx.log(ngx.INFO, "Below LOW_WATERMARK. Refilled captchas. Current count: " .. #shared_cache:get_keys(0))
+        end
+
+        -- 少量补充，尽力确保验证码池非空
+        for i = 1, REFILL_COUNT do
+            local code, img = captcha_generate.generate()
+            shared_cache:set(code, img, ttl) -- 设置 8-12min 随机 TTL
+        end
+
+        ngx.log(ngx.INFO, "The captcha pool has been supplemented: ", REFILL_COUNT, ". The current number is: " .. #shared_cache:get_keys(0))
+
+    end)
+
+    if ok then
+        ngx.log(ngx.INFO, "OK to create the captcha create timer")
+    end
+
+    if not ok then
+        ngx.log(ngx.ERR, "Failed to create the captcha create timer: ", err)
+    end
+
+end
+
+return _M
